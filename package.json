@@ -1,0 +1,29 @@
+{
+  "name": "wechatsnsviewer",
+  "version": "1.0.0",
+  "description": "朋友圈备份浏览工具 [👉不知道朋友圈备份文件哪来？](https://mp.weixin.qq.com/s?__biz=Mzg4MDExMTUwMw==&mid=2247483679&idx=1&sn=12f73bf7f92f94b12ec057e64913b0f8&chksm=cf7b7bfff80cf2e9afa369117e5da5733854f4823e70dddce64a5537a7de3c24bb1b121727cb&token=1469653834&lang=zh_CN#rd)",
+  "main": "download.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tarkus/WechatSnsViewer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tarkus/WechatSnsViewer/issues"
+  },
+  "homepage": "https://github.com/tarkus/WechatSnsViewer#readme",
+  "dependencies": {
+    "file-type": "^14.1.3",
+    "jsdom": "^16.2.0",
+    "shelljs": "^0.8.3",
+    "x2js": "^3.4.0",
+    "xml-js": "^1.6.11",
+    "xml2js": "^0.4.23",
+    "xml2json-light": "^1.0.6",
+    "xmldom": "^0.2.1"
+  }
+}
