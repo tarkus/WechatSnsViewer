@@ -1,31 +1,154 @@
 <!DOCTYPE html>
 <!-- vim: noai:ts=4:sw=4 -->
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>朋友圈存档</title>
-    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://cdn.bootcss.com/fancybox/3.5.6/jquery.fancybox.min.js"></script>
-    <script src="./assets/js/app.js"></script>
-    <link href="https://cdn.bootcss.com/fancybox/3.5.6/jquery.fancybox.min.css" rel="stylesheet">
-    <link href="./assets/css/app.css" rel="stylesheet">
-    <link rel="shortcut icon" type="image/x-icon" href="http://res.wx.qq.com/a/wx_fed/assets/res/NTI4MWU5.ico">
-    <script type="text/javascript">
-      var authorId = null;
-      var timeline = null;
-      var assetMap = null;
-      var shareMap = null;
-      var waypoint = 0;
-      var scrollAmount = 20;
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>朋友圈存档</title>
+        <link rel="shortcut icon" type="image/x-icon" href="http://res.wx.qq.com/a/wx_fed/assets/res/NTI4MWU5.ico">
+        <link rel="stylesheet" href="./assets/css/bootstrap.min.css">
+        <link rel="stylesheet" href="./assets/css/app.css">
+        <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.6/jquery.fancybox.min.css">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/busy-load/dist/app.min.css">
+        <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://cdn.bootcss.com/fancybox/3.5.6/jquery.fancybox.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/busy-load/dist/app.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.4.6/fuse.min.js"></script>
+        <script src="./assets/js/app.js"></script>
+        <script type="text/javascript">
+            var authorId = null;
+            var timeline = null;
+            var assetMap = null;
+            var shareMap = null;
+            var waypoint = 0;
+            var scrollAmount = 20;
+            var assetPath = "./assets";
+            var shasum = "";
+            var wordArtURL = "";
 
-      $(document).ready(function() {
-        init();
-      })
-    </script>
-  </head>
-  <body>
-    <div id="app"></div>
-  </body>
+            $(document).ready(function() {
+                init();
+            })
+        </script>
+    </head>
+    <body>
+        <div class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary">
+            <div class="container">
+                <a href="../" class="navbar-brand"><i class="fa fa-wechat"></i>圈存</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item">
+                            <a class="nav-link posts-toggle" href="#">首页</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="date-panel-toggle">存档</a>
+							<ul id="date-panel" class="dropdown-menu"></ul> 
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link stats-toggle" href="#">统计</a>
+                        </li>
+                    </ul>
+                    <form class="form-inline my-2 my-lg-0 search-form">
+                        <input class="form-control search-input" type="text" placeholder="搜索 ...">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary my-2 my-sm-0" type="submit"><i class="fa fa-search"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>  
+
+        <div class="container">
+
+            <div id="posts" class="view posts active"></div>
+            <div id="search-result" class="view posts"></div>
+            <div id="archive" class="view posts"></div>
+            <div id="stats" class="view"></div>
+        </div>
+
+        <div id="templates">
+            <div class="search-report"> 
+                <div class="row search-report-inner">
+                    <div class="col-md-8 offset-md-2">
+                        <div class="alert alert-secondary">
+                            搜索"{needle}"共返回了{result}条结果
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="empty"> 
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="jumbotron">
+                            <p class="lead">没有找到相应内容</p>
+                            <hr class="my-4" />
+                            <p>请尝试更换搜索条件继续搜索</p>
+                            <p class="lead">
+                            <a class="btn btn-primary btn-lg posts-toggle" href="#" role="button">返回首页</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="row jumbotron">
+                    <div class="word-art">{word_art}</div>
+
+                    <div class="col-lg-8 offset-lg-4">
+                        <p class="lead">从 {since} 至 {until}</p>
+                    </div>
+
+                    <div class="col-lg-2 offset-lg-4">
+                        <div class="card text-white bg-secondary mb-3" style="max-width: 20rem;">
+                            <div class="card-header">发圈</div>
+                            <div class="card-body">
+                                <h4 class="card-title">{posts}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2">
+                        <div class="card text-white bg-secondary mb-3" style="max-width: 20rem;">
+                            <div class="card-header">发图</div>
+                            <div class="card-body">
+                                <h4 class="card-title">{media}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2">
+                        <div class="card text-white bg-secondary mb-3" style="max-width: 20rem;">
+                            <div class="card-header">评论</div>
+                            <div class="card-body">
+                                <h4 class="card-title">{comments}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2">
+                        <div class="card text-white bg-secondary mb-3" style="max-width: 20rem;">
+                            <div class="card-header">收获点赞</div>
+                            <div class="card-body">
+                                <h4 class="card-title">{likes}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8 offset-lg-4 my-1">
+                        <p class="">发圈最多的月份是　{months}</p>
+                        <p class="text-muted mono">SHA1 {shasum}</p>
+                    </div>
+
+                </div>
+            </div>
+
+
+        </div>
+    </body>
 </html>

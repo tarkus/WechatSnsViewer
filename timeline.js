@@ -59,6 +59,7 @@ var sns = fs.readFile(jsonFile, 'utf8', function(err, data) {
   var shareMap = {};
   var authorId = "";
   var timeline = [];
+  var shasum = "";
 
   var parsed = 0;
 
@@ -175,6 +176,8 @@ var sns = fs.readFile(jsonFile, 'utf8', function(err, data) {
             url: contentObject.contentUrl[0]
           };
         }
+        item.shareTitle = contentObject.title;
+        item.shareUrl = contentObject.contentUrl[0];
 
         if (contentObject.mediaList) {
           var fixed = 0;
@@ -225,19 +228,28 @@ var sns = fs.readFile(jsonFile, 'utf8', function(err, data) {
         parsed += 1;
 
         if (parsed == sns.length) {
+
+          shasum = crypto.createHash('sha1').update(JSON.stringify(timeline)).digest('hex');
+
+          assetMap["SHASUM"] = shasum;
+          assetMap["WORD_ART_URL"] = userDir.replace('{AUTHOR_ID}', authorId) + "/word_art.png";
+
+          fs.writeFileSync(getFilePath("timeline"), JSON.stringify(timeline));
           fs.writeFileSync(getFilePath("asset"), JSON.stringify(assetMap));
           fs.writeFileSync(getFilePath("share"), JSON.stringify(shareMap));
-          fs.writeFileSync(getFilePath("timeline"), JSON.stringify(timeline));
+          console.log("timeline.json generated. sum(sha1):", shasum);
           generateText();
           generateHTML();
-          download();
+          if (!process.argv.includes('skip')) {
+            download();
+          }
         }
       });
     };
 
     var generateText = function() {
       var yearly = {};
-      var template = "###### {DATE} \n\n{CONTENT}\n\n";
+      var template = "## {DATE} \n\n{CONTENT}\n\n";
       for (var entry of timeline) {
         var text = "";
         var content = "";
@@ -254,7 +266,7 @@ var sns = fs.readFile(jsonFile, 'utf8', function(err, data) {
           var images = [];
           for (var i = 0;i < entry.mediaDetail.length;i++) {
             var media = entry.mediaDetail[i];
-            var image = "![" + (i + 1) + "](" + assetMap[media.url].replace("./data", "../data") + ")";
+            var image = "![" + (i + 1) + "](" + assetMap[media.url].replace(/\.\/data\/\w+\//, "../") + ")";
             images.push(image);
           }
 
@@ -282,13 +294,13 @@ var sns = fs.readFile(jsonFile, 'utf8', function(err, data) {
 
       var find = [
         '朋友圈存档',
-        '<script src="./assets/js/app.js"></script>',
-        '<link href="./assets/css/app.css" rel="stylesheet">',
+        /\.\/assets/g,
         'var authorId = null;', 
         'var timeline = null;', 
         'var assetMap = null;', 
         'var shareMap = null;', 
-        'var waypoint = 0;'
+        'var shasum = "";',
+        'var wordArtURL = "";',
       ];
 
       for (var entry of timeline) {
@@ -304,13 +316,13 @@ var sns = fs.readFile(jsonFile, 'utf8', function(err, data) {
         var regex = new RegExp('./data/[^/]+/', 'g');
         var replace = [
           '朋友圈存档 - ' + year + "年",
-          '<script src="../assets/js/app.js"></script>',
-          '<link href="../assets/css/app.css" rel="stylesheet">',
+          '../assets',
           'var authorId = "' + authorId + '";', 
           'var timeline = ' + JSON.stringify(yearly[year]) + ';', 
           'var assetMap = ' + JSON.stringify(assetMap).replace(regex, "../") + ';', 
           'var shareMap = ' + JSON.stringify(shareMap) + ';', 
-          'var waypoint = -1;'
+          'var shasum = "' + shasum + '";',
+          'var wordArtURL = "../word_art.png";',
         ];
 
         for (var i = 0; i < find.length; i++) {
@@ -327,13 +339,13 @@ var sns = fs.readFile(jsonFile, 'utf8', function(err, data) {
       var regex = new RegExp('./data/[^/]+/', 'g');
       var replace = [
         '朋友圈存档',
-        '<script src="./assets/js/app.js"></script>',
-        '<link href="./assets/css/app.css" rel="stylesheet">',
+        './assets',
         'var authorId = "' + authorId + '";', 
         'var timeline = ' + JSON.stringify(timeline) + ';', 
         'var assetMap = ' + JSON.stringify(assetMap).replace(regex, "./") + ';', 
         'var shareMap = ' + JSON.stringify(shareMap) + ';', 
-        'var waypoint = 0;'
+        'var shasum = "' + shasum + '";',
+        'var wordArtURL = "./word_art.png";',
       ];
 
       for (var i = 0; i < find.length; i++) {

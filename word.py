@@ -10,14 +10,14 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 jsonFile = "./data/exported_sns.json";
-outputFile = "./data/{AUTHOR_ID}/words.png"
+outputFile = "./data/{AUTHOR_ID}/word_art.png"
 
 
 def gen_img(texts, img_file):
     data = ' '.join(text for text in texts)
     image_coloring = imageio.imread(img_file)
     wc = WordCloud(
-        background_color='white',
+        background_color='#f9f8fc',
         mask=image_coloring,
         font_path='/Library/Fonts/Songti.ttc'
     )
@@ -35,6 +35,7 @@ if __name__ == '__main__':
     print('朋友圈总条目数：', len(timeline))
 
     words = []
+    jieba.analyse.set_stop_words('./stop_words.txt')
     for entry in timeline:
         if authorId and authorId != entry['authorId']:
             raise ValueError('inconsistent authorId')
@@ -43,4 +44,5 @@ if __name__ == '__main__':
         words.extend(jieba.analyse.extract_tags(entry['content']))
     print("总词数：", len(words))
 
-    gen_img(words, 'assets/wechat.png')
+    #gen_img(words, 'assets/wechat.png')
+    gen_img(words, './owl.jpg')
